@@ -197,6 +197,8 @@ def render_hot_data(baidu_data, weibo_data, ithome_data, show_mode):
                 text_box.insert(tk.END, MARK_BAIDU, "content")
                 text_box.insert(tk.END, f"{idx}. ", "index")
                 text_box.insert(tk.END, f"{title}\n", "content")
+        elif baidu_data is None:
+            text_box.insert(tk.END, "⏳ 正在爬取百度热搜...\n", "loading")
         else:
             text_box.insert(tk.END, "❌ 百度热搜获取失败\n", "loading")
         text_box.insert(tk.END, "\n", "content")
@@ -208,6 +210,8 @@ def render_hot_data(baidu_data, weibo_data, ithome_data, show_mode):
                 text_box.insert(tk.END, MARK_WEIBO, "content")
                 text_box.insert(tk.END, f"{item['排名']}. ", "index")
                 text_box.insert(tk.END, f"{item['标题']}\n", "content")
+        elif weibo_data is None:
+            text_box.insert(tk.END, "⏳ 正在爬取微博热搜...\n", "loading")
         else:
             text_box.insert(tk.END, "❌ 微博热搜获取失败\n", "loading")
         text_box.insert(tk.END, "\n", "content")
@@ -219,6 +223,8 @@ def render_hot_data(baidu_data, weibo_data, ithome_data, show_mode):
                 text_box.insert(tk.END, MARK_ITHOME, "content")
                 text_box.insert(tk.END, f"{idx}. ", "index")
                 text_box.insert(tk.END, f"{title}\n", "content")
+        elif ithome_data is None:
+            text_box.insert(tk.END, "⏳ 正在爬取IT之家资讯...\n", "loading")
         else:
             text_box.insert(tk.END, "❌ IT之家资讯获取失败\n", "loading")
 
@@ -229,6 +235,8 @@ def render_hot_data(baidu_data, weibo_data, ithome_data, show_mode):
                 text_box.insert(tk.END, MARK_BAIDU, "content")
                 text_box.insert(tk.END, f"{idx}. ", "index")
                 text_box.insert(tk.END, f"{title}\n", "content")
+        elif baidu_data is None:
+            text_box.insert(tk.END, "⏳ 正在爬取百度热搜...\n", "loading")
         else:
             text_box.insert(tk.END, "❌ 百度热搜获取失败\n", "loading")
 
@@ -239,6 +247,8 @@ def render_hot_data(baidu_data, weibo_data, ithome_data, show_mode):
                 text_box.insert(tk.END, MARK_WEIBO, "content")
                 text_box.insert(tk.END, f"{item['排名']}. ", "index")
                 text_box.insert(tk.END, f"{item['标题']}\n", "content")
+        elif weibo_data is None:
+            text_box.insert(tk.END, "⏳ 正在爬取微博热搜...\n", "loading")
         else:
             text_box.insert(tk.END, "❌ 微博热搜获取失败\n", "loading")
 
@@ -249,6 +259,8 @@ def render_hot_data(baidu_data, weibo_data, ithome_data, show_mode):
                 text_box.insert(tk.END, MARK_ITHOME, "content")
                 text_box.insert(tk.END, f"{idx}. ", "index")
                 text_box.insert(tk.END, f"{title}\n", "content")
+        elif ithome_data is None:
+            text_box.insert(tk.END, "⏳ 正在爬取IT之家资讯...\n", "loading")
         else:
             text_box.insert(tk.END, "❌ IT之家资讯获取失败\n", "loading")
 

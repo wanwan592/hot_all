@@ -214,6 +214,9 @@ def main():
         except Exception as e:
             print(f"{name}爬取异常：{e}")
             result = None
+        # None → 爬虫失败，用 False 标记（None 保留给"尚未加载"状态）
+        if result is None:
+            result = False
         with _cache_lock:
             if name == "baidu":
                 cache_baidu = result
