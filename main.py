@@ -203,15 +203,38 @@ def main():
     text_box.insert(tk.END, "💡 顶部【三榜/百度/微博/IT】切换源\n", "loading")
     text_box.insert(tk.END, "💡 拖拽右下角调整窗口大小 | A±调节字号", "loading")
 
-    # 启动刷新线程
-    def refresh_loop():
+    # 启动刷新线程（三个爬虫并行执行，哪个先完成就先显示哪个）
+    _cache_lock = threading.Lock()
+
+    def _fetch_and_update(name, fetcher):
+        """在独立线程中执行爬虫，完成后调度到主线程更新 UI"""
         global cache_baidu, cache_weibo, cache_ithome
+        try:
+            result = fetcher()
+        except Exception as e:
+            print(f"{name}爬取异常：{e}")
+            result = None
+        with _cache_lock:
+            if name == "baidu":
+                cache_baidu = result
+            elif name == "weibo":
+                cache_weibo = result
+            elif name == "ithome":
+                cache_ithome = result
+            b, w, i = cache_baidu, cache_weibo, cache_ithome
+        root.after(0, render_hot_data, b, w, i, show_mode)
+
+    def refresh_loop():
         while True:
-            b_res = get_baidu_hot()
-            w_res = get_weibo_hot()
-            i_res = get_ithome_hot()
-            cache_baidu, cache_weibo, cache_ithome = b_res, w_res, i_res
-            root.after(0, render_hot_data, b_res, w_res, i_res, show_mode)
+            threads = [
+                threading.Thread(target=_fetch_and_update, args=("baidu", get_baidu_hot)),
+                threading.Thread(target=_fetch_and_update, args=("weibo", get_weibo_hot)),
+                threading.Thread(target=_fetch_and_update, args=("ithome", get_ithome_hot)),
+            ]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join(timeout=60)  # 单个爬虫最多等 60 秒
             time.sleep(300)
 
     threading.Thread(target=refresh_loop, daemon=True).start()
