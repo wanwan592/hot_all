@@ -68,6 +68,12 @@ def create_ui(master):
     lock_btn.pack(side="left", padx=4)
     _register(lock_btn, "title_bg_fg")
 
+    # 置顶按钮
+    pin_btn = tk.Button(left_group, text="📌", bd=0, bg=current_color["title_bg"],
+                        fg=current_color["text_normal"], width=2)
+    pin_btn.pack(side="left", padx=4)
+    _register(pin_btn, "title_bg_fg")
+
     # 主题切换
     theme_btn = tk.Button(left_group, text="☀️", bd=0, bg=current_color["title_bg"],
                           fg=current_color["text_normal"], width=3)
@@ -161,6 +167,7 @@ def create_ui(master):
     # 返回需要外部绑定的控件和回调函数接口
     buttons = {
         'lock': lock_btn,
+        'pin': pin_btn,
         'theme': theme_btn,
         'mode': mode_btn,
         'font_minus': font_minus_btn,

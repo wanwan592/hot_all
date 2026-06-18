@@ -43,6 +43,13 @@ def main():
         buttons['lock'].config(text="🔒" if win_lock else "🔓")
     buttons['lock'].config(command=toggle_lock)
 
+    # 置顶切换
+    def toggle_topmost():
+        is_top = root.attributes("-topmost")
+        root.attributes("-topmost", not is_top)
+        buttons['pin'].config(text="📌" if not is_top else "📍")
+    buttons['pin'].config(command=toggle_topmost)
+
     # 主题切换
     def switch_theme():
         if current_color["root_bg"] == theme_dark["root_bg"]:
