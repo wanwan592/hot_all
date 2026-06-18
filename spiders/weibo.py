@@ -1,5 +1,6 @@
 # spiders/weibo.py
 import os
+import sys
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.edge.options import Options
@@ -7,8 +8,13 @@ from selenium.webdriver.edge.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-# 获取当前文件所在目录，用于定位驱动（假设驱动放在项目根目录）
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# 定位 msedgedriver.exe：
+# - 打包后：sys.executable 指向 HotSearch.exe，驱动在同目录
+# - 开发环境：驱动在项目根目录（spiders/ 的上一级）
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DRIVER_PATH = os.path.join(BASE_DIR, 'msedgedriver.exe')
 
 def get_weibo_hot():
