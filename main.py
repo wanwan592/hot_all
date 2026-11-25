@@ -5,7 +5,7 @@ import threading
 import time
 import webbrowser
 from config import *
-from spiders import get_baidu_hot, get_weibo_hot, get_ithome_hot
+from spiders import get_baidu_hot, get_weibo_hot, get_github_weekly
 from ui import create_ui, render_hot_data, update_font_size, refresh_all_colors
 from tray import setup_tray
 
@@ -13,8 +13,9 @@ from tray import setup_tray
 show_mode = 0
 cache_baidu = None
 cache_weibo = None
-cache_ithome = None
+cache_github = None
 win_lock = False
+topmost_on = False  # 默认不置顶（贴底），需手动点击 📌 开启
 current_font_size = 10
 text_box = None
 root = None
@@ -26,7 +27,7 @@ def main():
     root = tk.Tk()
     root.title("热搜悬浮窗")
     root.overrideredirect(True)
-    root.attributes("-topmost", True)
+    root.attributes("-topmost", False)
     root.attributes("-alpha", 0.92)
     root.geometry("640x720+100+100")
     root.minsize(MIN_WIDTH, MIN_HEIGHT)
@@ -43,11 +44,12 @@ def main():
         buttons['lock'].config(text="🔒" if win_lock else "🔓")
     buttons['lock'].config(command=toggle_lock)
 
-    # 置顶切换
+    # 置顶切换（用独立状态变量，避免 tk 返回 "0"/"1" 字符串导致布尔判断出错）
     def toggle_topmost():
-        is_top = root.attributes("-topmost")
-        root.attributes("-topmost", not is_top)
-        buttons['pin'].config(text="📌" if not is_top else "📍")
+        global topmost_on
+        topmost_on = not topmost_on
+        root.attributes("-topmost", topmost_on)
+        buttons['pin'].config(text="📌" if topmost_on else "📍")
     buttons['pin'].config(command=toggle_topmost)
 
     # 主题切换
@@ -67,15 +69,15 @@ def main():
     def switch_show_mode():
         global show_mode
         show_mode = (show_mode + 1) % 4
-        txt = ["三榜", "百度", "微博", "IT"][show_mode]
+        txt = ["三榜", "百度", "微博", "GitHub"][show_mode]
         buttons['mode'].config(text=txt)
-        render_hot_data(cache_baidu, cache_weibo, cache_ithome, show_mode)
+        render_hot_data(cache_baidu, cache_weibo, cache_github, show_mode)
     buttons['mode'].config(command=switch_show_mode)
 
     # 字体调节
     def change_font(delta):
         global current_font_size
-        new_size = max(MIN_FONT_SIZE, min(24, current_font_size + delta))
+        new_size = max(MIN_FONT_SIZE, min(MAX_FONT_SIZE, current_font_size + delta))
         if new_size != current_font_size:
             current_font_size = new_size
             update_font_size(current_font_size)
@@ -193,11 +195,21 @@ def main():
             elif line_full.startswith(MARK_WEIBO):
                 title = line_full.replace(MARK_WEIBO, "").split(". ", 1)[1]
                 webbrowser.open(f"https://s.weibo.com/weibo?q={title}")
-            elif line_full.startswith(MARK_ITHOME):
-                title = line_full.replace(MARK_ITHOME, "").split(". ", 1)[1]
-                # 需要获取ithome链接，此处使用cache_ithome
-                for t, link in (cache_ithome or []):
-                    if t == title:
+            elif line_full.startswith(MARK_GITHUB):
+                # GitHub 每条占两行（项目名行 + 描述行），点到描述行时向上找项目名行
+                ln = int(pos.split('.')[0])
+                head_line = line_full.replace(MARK_GITHUB, "")
+                for back in range(3):
+                    if ln - back < 1:
+                        continue
+                    cand = text_box.get(f"{ln-back}.0", f"{ln-back}.end").strip().replace(MARK_GITHUB, "")
+                    if cand.split(". ", 1)[0].isdigit():
+                        head_line = cand
+                        break
+                title = head_line.split(". ", 1)[1] if ". " in head_line else head_line
+                # 缓存中的 t 是完整标题（项目名+星数+描述），用前缀匹配
+                for t, link in (cache_github or []):
+                    if t.startswith(title):
                         webbrowser.open(link)
                         break
         except IndexError:
@@ -207,7 +219,7 @@ def main():
     # 初始提示
     text_box.insert(tk.END, "⏳ 正在加载数据，请稍候...\n", "loading")
     text_box.insert(tk.END, "💡 点击新闻标题可跳转详情\n", "loading")
-    text_box.insert(tk.END, "💡 顶部【三榜/百度/微博/IT】切换源\n", "loading")
+    text_box.insert(tk.END, "💡 顶部【三榜/百度/微博/GitHub】切换源\n", "loading")
     text_box.insert(tk.END, "💡 拖拽右下角调整窗口大小 | A±调节字号", "loading")
 
     # 启动刷新线程（三个爬虫并行执行，哪个先完成就先显示哪个）
@@ -215,7 +227,7 @@ def main():
 
     def _fetch_and_update(name, fetcher):
         """在独立线程中执行爬虫，完成后调度到主线程更新 UI"""
-        global cache_baidu, cache_weibo, cache_ithome
+        global cache_baidu, cache_weibo, cache_github
         try:
             result = fetcher()
         except Exception as e:
@@ -229,9 +241,9 @@ def main():
                 cache_baidu = result
             elif name == "weibo":
                 cache_weibo = result
-            elif name == "ithome":
-                cache_ithome = result
-            b, w, i = cache_baidu, cache_weibo, cache_ithome
+            elif name == "github":
+                cache_github = result
+            b, w, i = cache_baidu, cache_weibo, cache_github
         root.after(0, render_hot_data, b, w, i, show_mode)
 
     def refresh_loop():
@@ -239,7 +251,7 @@ def main():
             threads = [
                 threading.Thread(target=_fetch_and_update, args=("baidu", get_baidu_hot)),
                 threading.Thread(target=_fetch_and_update, args=("weibo", get_weibo_hot)),
-                threading.Thread(target=_fetch_and_update, args=("ithome", get_ithome_hot)),
+                threading.Thread(target=_fetch_and_update, args=("github", get_github_weekly)),
             ]
             for t in threads:
                 t.start()

@@ -2,7 +2,7 @@
 
 # HotSearch - 热搜悬浮窗
 
-**一款轻量级桌面热搜聚合工具，三平台实时热点，悬浮置顶，一键直达**
+**一款轻量级桌面信息聚合工具，三榜实时热点 + GitHub 开源趋势，悬浮置顶，一键直达**
 
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white)](https://www.microsoft.com/windows)
@@ -18,7 +18,7 @@
 
 当下，越来越多的大学生和职场人习惯通过短视频平台获取时事新闻——刷一条 15 秒的视频就算"看过新闻了"。但短视频天然存在局限：算法推荐让你困在信息茧房里，碎片化的剪辑让事件缺乏全貌，被动投喂取代了主动检索，你以为了解了世界，其实只看到了算法想让你看到的那一小块。
 
-**HotSearch 就是为了打破这个信息差。** 它把百度、微博、IT之家三个平台的实时热搜聚合到一个桌面悬浮窗里，无需打开浏览器、无需刷新页面，热点信息始终在你的视野边缘，一眼可见。相比逐条刷视频，文字标题的信息密度更高、获取速度更快，让你在最短的时间内知道"此刻正在发生什么"。
+**HotSearch 就是为了打破这个信息差。** 它把百度热搜、微博热搜、GitHub 本周热门项目聚合到一个桌面悬浮窗里，无需打开浏览器、无需刷新页面，热点信息始终在你的视野边缘，一眼可见。相比逐条刷视频，文字标题的信息密度更高、获取速度更快，让你在最短的时间内知道"此刻正在发生什么"，也能顺手发现本周值得关注的开源项目。
 
 ## ✨ 功能特性
 
@@ -27,7 +27,7 @@
 <td width="50%">
 
 ### 🔥 三榜聚合
-实时抓取 **百度热搜**、**微博热搜**、**IT之家热门资讯**，支持单榜查看或三榜合并展示，每 5 分钟自动刷新。
+实时抓取 **百度热搜**、**微博热搜**，并展示 **GitHub 本周热门项目**，支持单榜查看或三榜合并展示，每 5 分钟自动刷新。
 
 ### 🖥️ 桌面悬浮
 无边框置顶窗口，自由拖拽移动，右下角手柄调节大小，透明度 30%~100% 可调。
@@ -55,8 +55,8 @@
 
 ### 环境要求
 
-- **Python** 3.12+
-- **Edge WebDriver** — [下载地址](https://developer.microsoft.com/en-us/microsoft-edge/tools/webdriver/)，将 `msedgedriver.exe` 放到项目根目录
+- **Python** 3.10+
+- **Edge WebDriver**（可选兜底）— 微博优先走轻量 API，仅当 API 不可用时才回退到 Selenium。如需兜底，从[这里](https://developer.microsoft.com/en-us/microsoft-edge/tools/webdriver/)下载并将 `msedgedriver.exe` 放到项目根目录
 
 ### 安装依赖
 
@@ -84,8 +84,8 @@ hot_all/
 └── spiders/
     ├── __init__.py
     ├── baidu.py         # 百度热搜爬虫 (requests + lxml XPath)
-    ├── weibo.py         # 微博热搜爬虫 (Selenium + Edge WebDriver)
-    └── ithome.py        # IT之家热门爬虫 (requests + parsel CSS)
+    ├── weibo.py         # 微博热搜爬虫 (JSON API 优先，Selenium 兜底)
+    └── github.py        # GitHub 本周热门爬虫 (requests + parsel CSS)
 ```
 
 ## 📦 打包部署
@@ -112,8 +112,9 @@ pyinstaller --onefile --noconsole --icon=app_icon.ico \
 |:-----|:---------|:-----|
 | GUI 框架 | `tkinter` | Python 内置 GUI，轻量无边框窗口 |
 | 百度爬虫 | `requests` + `lxml` | HTTP 请求 + XPath 解析 |
-| 微博爬虫 | `Selenium` + Edge | 无头浏览器渲染动态页面 |
-| IT之家爬虫 | `requests` + `parsel` | HTTP 请求 + CSS 选择器 |
+| 微博爬虫 | `requests` (JSON API) + Selenium 兜底 | 优先轻量 API，失败回退无头浏览器 |
+| GitHub 爬虫 | `requests` + `parsel` | 抓 Trending 周榜，自动容错 SSL 证书问题；失败回退 GitHub 官方 Search API |
+| 中文翻译 | MyMemory 翻译 API | 项目描述自动译成中文，内存+磁盘双层缓存（重启后复用，不重复消耗额度）；失败保留英文原文 |
 | 系统托盘 | `pystray` + `Pillow` | 跨平台托盘图标 + 图片生成 |
 | 开机自启 | `winreg` | Windows 注册表读写 |
 | 打包发布 | `PyInstaller` | 单文件 exe 打包 |

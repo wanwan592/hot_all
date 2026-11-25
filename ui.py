@@ -69,7 +69,7 @@ def create_ui(master):
     _register(lock_btn, "title_bg_fg")
 
     # 置顶按钮
-    pin_btn = tk.Button(left_group, text="📌", bd=0, bg=current_color["title_bg"],
+    pin_btn = tk.Button(left_group, text="📍", bd=0, bg=current_color["title_bg"],
                         fg=current_color["text_normal"], width=2)
     pin_btn.pack(side="left", padx=4)
     _register(pin_btn, "title_bg_fg")
@@ -191,7 +191,20 @@ def draw_grip_lines(canvas):
         canvas.create_line(size - offset, size - 2, size - 2, size - offset, fill=c, width=1)
 
 
-def render_hot_data(baidu_data, weibo_data, ithome_data, show_mode):
+def _split_github_title(title):
+    """把 '项目名  星数  ·  描述' 拆成 (头部, 描述)"""
+    if '  ·  ' in title:
+        head, desc = title.split('  ·  ', 1)
+        return head, desc
+    return title, ''
+
+
+def _short_desc(desc, limit=30):
+    """描述截断到 limit 字，超出加省略号"""
+    return desc[:limit] + ('…' if len(desc) > limit else '')
+
+
+def render_hot_data(baidu_data, weibo_data, github_data, show_mode):
     """渲染数据到文本框"""
     global text_box
     text_box.delete(1.0, tk.END)
@@ -223,17 +236,21 @@ def render_hot_data(baidu_data, weibo_data, ithome_data, show_mode):
             text_box.insert(tk.END, "❌ 微博热搜获取失败\n", "loading")
         text_box.insert(tk.END, "\n", "content")
 
-        # IT之家
-        text_box.insert(tk.END, "===== IT之家 热门资讯 =====\n\n", "title_split")
-        if ithome_data:
-            for idx, (title, link) in enumerate(ithome_data[:15], 1):
-                text_box.insert(tk.END, MARK_ITHOME, "content")
+        # GitHub 每周热门
+        text_box.insert(tk.END, "===== GitHub 本周热门项目 =====\n\n", "title_split")
+        if github_data:
+            for idx, (title, link) in enumerate(github_data[:15], 1):
+                head, desc = _split_github_title(title)
+                text_box.insert(tk.END, MARK_GITHUB, "content")
                 text_box.insert(tk.END, f"{idx}. ", "index")
-                text_box.insert(tk.END, f"{title}\n", "content")
-        elif ithome_data is None:
-            text_box.insert(tk.END, "⏳ 正在爬取IT之家资讯...\n", "loading")
+                text_box.insert(tk.END, f"{head}\n", "content")
+                if desc:
+                    text_box.insert(tk.END, MARK_GITHUB, "content")
+                    text_box.insert(tk.END, f"     {_short_desc(desc)}\n", "content")
+        elif github_data is None:
+            text_box.insert(tk.END, "⏳ 正在爬取 GitHub 热门项目...\n", "loading")
         else:
-            text_box.insert(tk.END, "❌ IT之家资讯获取失败\n", "loading")
+            text_box.insert(tk.END, "❌ GitHub 热门项目获取失败\n", "loading")
 
     elif show_mode == 1:  # 仅百度
         text_box.insert(tk.END, "===== 百度实时热搜 =====\n\n", "title_split")
@@ -259,17 +276,21 @@ def render_hot_data(baidu_data, weibo_data, ithome_data, show_mode):
         else:
             text_box.insert(tk.END, "❌ 微博热搜获取失败\n", "loading")
 
-    elif show_mode == 3:  # 仅IT之家
-        text_box.insert(tk.END, "===== IT之家 热门资讯 =====\n\n", "title_split")
-        if ithome_data:
-            for idx, (title, link) in enumerate(ithome_data[:15], 1):
-                text_box.insert(tk.END, MARK_ITHOME, "content")
+    elif show_mode == 3:  # 仅 GitHub
+        text_box.insert(tk.END, "===== GitHub 本周热门项目 =====\n\n", "title_split")
+        if github_data:
+            for idx, (title, link) in enumerate(github_data[:15], 1):
+                head, desc = _split_github_title(title)
+                text_box.insert(tk.END, MARK_GITHUB, "content")
                 text_box.insert(tk.END, f"{idx}. ", "index")
-                text_box.insert(tk.END, f"{title}\n", "content")
-        elif ithome_data is None:
-            text_box.insert(tk.END, "⏳ 正在爬取IT之家资讯...\n", "loading")
+                text_box.insert(tk.END, f"{head}\n", "content")
+                if desc:
+                    text_box.insert(tk.END, MARK_GITHUB, "content")
+                    text_box.insert(tk.END, f"     {_short_desc(desc)}\n", "content")
+        elif github_data is None:
+            text_box.insert(tk.END, "⏳ 正在爬取 GitHub 热门项目...\n", "loading")
         else:
-            text_box.insert(tk.END, "❌ IT之家资讯获取失败\n", "loading")
+            text_box.insert(tk.END, "❌ GitHub 热门项目获取失败\n", "loading")
 
     text_box.insert(tk.END, "\n🔄 5分钟后自动刷新", "loading")
 
